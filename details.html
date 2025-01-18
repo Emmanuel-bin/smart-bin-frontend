@@ -21,7 +21,7 @@
     const params = new URLSearchParams(window.location.search);
     const binId = params.get('binId');
 
-    const API_URL = 'https://YOUR-BACKEND-APP.onrender.com/api/bins'; // same as app.js
+    const API_URL = 'https://smart-bin-backend-cusz.onrender.com/api/bins'; // same as app.js
 
     fetch(API_URL)
       .then(res => res.json())
