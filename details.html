@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Bin Details</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js for graphical display -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1 id="bin-title">Bin Details</h1>
+  <div id="bin-info">
+    <p><strong>Location:</strong> <span id="bin-location"></span></p>
+    <p><strong>Temperature:</strong> <span id="bin-temperature"></span> °C</p>
+    <p><strong>Humidity:</strong> <span id="bin-humidity"></span> %</p>
+  </div>
+
+  <canvas id="wasteChart" width="400" height="200"></canvas>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const binId = params.get('binId');
+
+    const API_URL = 'https://YOUR-BACKEND-APP.onrender.com/api/bins'; // same as app.js
+
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(bins => {
+        const bin = bins.find(b => b.binId === binId);
+        if (!bin) {
+          document.getElementById('bin-title').innerText = 'Bin Not Found';
+          return;
+        }
+
+        // Update details
+        document.getElementById('bin-title').innerText = `Bin ID: ${bin.binId}`;
+        document.getElementById('bin-location').innerText = `(${bin.location.lat}, ${bin.location.lng})`;
+        document.getElementById('bin-temperature').innerText = bin.temperature;
+        document.getElementById('bin-humidity').innerText = bin.humidity;
+
+        // Chart.js for wasteLevel
+        const ctx = document.getElementById('wasteChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: [
+              'Compartment 1',
+              'Compartment 2',
+              'Compartment 3',
+              'Compartment 4',
+              'Compartment 5',
+              'Compartment 6'
+            ],
+            datasets: [{
+              label: 'Waste Level (%)',
+              data: bin.wasteLevel,
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 206, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)',
+                'rgba(255, 159, 64, 0.6)'
+              ],
+              borderColor: '#333',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        });
+      })
+      .catch(err => {
+        console.error('Error fetching bin data:', err);
+      });
+  </script>
+</body>
+</html>
