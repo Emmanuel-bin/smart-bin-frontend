@@ -1,5 +1,5 @@
 // Replace with your Render backend URL
-const API_URL = 'https://YOUR-BACKEND-APP.onrender.com/api/bins';
+const API_URL = 'https://smart-bin-backend-cusz.onrender.com/api/bins';
 
 function initMap() {
   // Default center (somewhere in UK or near Nottingham)
