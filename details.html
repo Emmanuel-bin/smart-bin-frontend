@@ -18,11 +18,15 @@
   <canvas id="wasteChart" width="400" height="200"></canvas>
 
   <script>
+    // We'll fetch data from the same /api/bins (DB-based) as the map
+    const BASE_URL = 'https://smart-bin-backend-cusz.onrender.com';
+    const API_URL = `${BASE_URL}/api/bins`; 
+
+    // 1) get binId from URL param
     const params = new URLSearchParams(window.location.search);
     const binId = params.get('binId');
 
-    const API_URL = 'https://smart-bin-backend-cusz.onrender.com/api/bins'; // same as app.js
-
+    // 2) fetch bin data from /api/bins, find the doc with this binId
     fetch(API_URL)
       .then(res => res.json())
       .then(bins => {
@@ -32,28 +36,28 @@
           return;
         }
 
-        // Update details
+        // 3) Update text for location, temp, humidity
         document.getElementById('bin-title').innerText = `Bin ID: ${bin.binId}`;
         document.getElementById('bin-location').innerText = `(${bin.location.lat}, ${bin.location.lng})`;
-        document.getElementById('bin-temperature').innerText = bin.temperature;
-        document.getElementById('bin-humidity').innerText = bin.humidity;
+        document.getElementById('bin-temperature').innerText = bin.temperature ?? 'N/A';
+        document.getElementById('bin-humidity').innerText = bin.humidity ?? 'N/A';
 
-        // Chart.js for wasteLevel
+        // 4) Render bar chart for wasteLevel
         const ctx = document.getElementById('wasteChart').getContext('2d');
         new Chart(ctx, {
           type: 'bar',
           data: {
             labels: [
-              'Organic Waste',
-              'Glass',
-              'Metal',
-              'Paper',
-              'Plastic',
-              'Textile'
+              'Compartment 1',
+              'Compartment 2',
+              'Compartment 3',
+              'Compartment 4',
+              'Compartment 5',
+              'Compartment 6'
             ],
             datasets: [{
               label: 'Waste Level (%)',
-              data: bin.wasteLevel,
+              data: bin.wasteLevel || [0, 0, 0, 0, 0, 0],
               backgroundColor: [
                 'rgba(255, 99, 132, 0.6)',
                 'rgba(54, 162, 235, 0.6)',

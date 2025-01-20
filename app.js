@@ -102,10 +102,6 @@ function startSSE() {
           lng: bin.location.lng
         });
       }
-
-      // If you want to display other data (temperature, humidity), 
-      // you could update marker tooltips or info windows here.
-      // e.g. markers[bin.binId].setTitle(`Bin ${bin.binId} Temp: ${bin.temperature}, Hum: ${bin.humidity}`);
     });
   };
 
