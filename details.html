@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bin Details (Pie Chart at 25%)</title>
+  <title>Bin Details (Bar Graph at 25%)</title>
   <link rel="stylesheet" href="styles.css" />
   <!-- Chart.js for graphical display -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,9 +15,9 @@
     <p><strong>Humidity:</strong> <span id="bin-humidity"></span> %</p>
   </div>
 
-  <!-- Wrapping the canvas in a 25%-width container -->
+  <!-- Bar Chart Container at 25% width -->
   <div style="width: 25%; margin: 0 auto;">
-    <canvas id="wasteChart" /* no fixed width/height here */></canvas>
+    <canvas id="wasteChart"></canvas>
   </div>
 
   <script>
@@ -45,23 +45,22 @@
         document.getElementById('bin-temperature').innerText = bin.temperature ?? 'N/A';
         document.getElementById('bin-humidity').innerText = bin.humidity ?? 'N/A';
 
-        // 4) Render pie chart for wasteLevel
+        // 4) Render bar chart for wasteLevel
         const ctx = document.getElementById('wasteChart').getContext('2d');
-
         new Chart(ctx, {
-          type: 'pie',
+          type: 'bar',
           data: {
             labels: [
-              'Glass',
-              'Metal',
-              'Organic Waste',
-              'Paper',
-              'Plastic',
-              'Unclassified'
+              'Compartment 1',
+              'Compartment 2',
+              'Compartment 3',
+              'Compartment 4',
+              'Compartment 5',
+              'Compartment 6'
             ],
             datasets: [{
               label: 'Waste Level (%)',
-              data: bin.wasteLevel || [0,0,0,0,0,0],
+              data: bin.wasteLevel ?? [0, 0, 0, 0, 0, 0],
               backgroundColor: [
                 'rgba(255, 99, 132, 0.6)',
                 'rgba(54, 162, 235, 0.6)',
@@ -75,6 +74,12 @@
             }]
           },
           options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            },
             plugins: {
               legend: {
                 display: true,
