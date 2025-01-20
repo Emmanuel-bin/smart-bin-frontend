@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bin Details (Pie Chart)</title>
+  <title>Bin Details (Pie Chart at 25%)</title>
   <link rel="stylesheet" href="styles.css" />
   <!-- Chart.js for graphical display -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,8 +15,10 @@
     <p><strong>Humidity:</strong> <span id="bin-humidity"></span> %</p>
   </div>
 
-  <!-- Pie Chart Canvas -->
-  <canvas id="wasteChart" width="400" height="200"></canvas>
+  <!-- Wrapping the canvas in a 25%-width container -->
+  <div style="width: 25%; margin: 0 auto;">
+    <canvas id="wasteChart" /* no fixed width/height here */></canvas>
+  </div>
 
   <script>
     // We'll fetch data from the same /api/bins endpoint used by app.js
@@ -76,11 +78,9 @@
             plugins: {
               legend: {
                 display: true,
-                position: 'bottom', // or 'top','left','right'
-              },
-            },
-            // If you want tooltips to show numeric values
-            // you could configure additional plugin or decimals
+                position: 'bottom'
+              }
+            }
           }
         });
       })
