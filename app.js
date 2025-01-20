@@ -7,6 +7,10 @@ const SSE_URL = `${BASE_URL}/api/bins/stream`;    // SSE endpoint for real-time 
 let map;
 let markers = {};  // e.g. { 'bin1': google.maps.Marker, 'bin2': ..., 'bin3': ... }
 
+// To track bins that have already triggered an alert
+let alertedBins = {};
+
+// Initialize the map
 function initMap() {
   // Default center (somewhere in UK or near Nottingham)
   const defaultCenter = { lat: 53.0, lng: -1.2 };
@@ -23,6 +27,7 @@ function initMap() {
   startSSE();
 }
 
+// Fetch initial bins data and place markers
 function fetchBinsData() {
   fetch(API_URL)
     .then(response => response.json())
@@ -67,19 +72,31 @@ function fetchBinsData() {
     });
 }
 
+// Start Server-Sent Events connection
 function startSSE() {
   // Connect to SSE endpoint
   const eventSource = new EventSource(SSE_URL);
 
   eventSource.onmessage = (evt) => {
-    // evt.data should be an array of 3 bin objects if your server is broadcasting that
+    // evt.data should be an array of bin objects
     const updatedBins = JSON.parse(evt.data);
     console.log("Received SSE update:", updatedBins);
 
-    // For each bin in the SSE update, update or create markers
+    // 1) Check for high waste levels and trigger notifications
+    updatedBins.forEach(bin => {
+      const hasHighLevel = bin.wasteLevel.some(level => level >= 95);
+      if (hasHighLevel && !alertedBins[bin.binId]) {
+        showNotification(`⚠️ Warning: Bin ${bin.binId} has a compartment at 95% or above!`);
+        alertedBins[bin.binId] = true; // Mark as alerted
+      } else if (!hasHighLevel && alertedBins[bin.binId]) {
+        // Reset alert status if waste level drops below threshold
+        alertedBins[bin.binId] = false;
+      }
+    });
+
+    // 2) Update markers or create them if they don't exist
     updatedBins.forEach(bin => {
       if (!markers[bin.binId]) {
-        // create a new marker
         const marker = new google.maps.Marker({
           position: {
             lat: bin.location.lat,
@@ -96,7 +113,6 @@ function startSSE() {
 
         markers[bin.binId] = marker;
       } else {
-        // update existing marker's position
         markers[bin.binId].setPosition({
           lat: bin.location.lat,
           lng: bin.location.lng
@@ -110,4 +126,27 @@ function startSSE() {
   };
 }
 
+// Function to display notifications
+function showNotification(message) {
+  const container = document.getElementById('notification-container');
+
+  // Create a new notification div
+  const notification = document.createElement('div');
+  notification.classList.add('notification');
+  notification.innerText = message;
+
+  // Append to the container
+  container.appendChild(notification);
+
+  // Automatically remove the notification after 5 seconds
+  setTimeout(() => {
+    notification.classList.add('hide');
+    // Remove from DOM after transition
+    notification.addEventListener('transitionend', () => {
+      notification.remove();
+    });
+  }, 5000);
+}
+
+// Initialize the map on window load
 window.onload = initMap;
