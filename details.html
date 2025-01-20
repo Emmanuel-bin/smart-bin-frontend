@@ -16,7 +16,7 @@
   </div>
 
   <!-- Bar Chart Container at 25% width -->
-  <div style="width: 25%; margin: 0 auto;">
+  <div style="width: 50%; margin: 0 auto;">
     <canvas id="wasteChart"></canvas>
   </div>
 
@@ -51,12 +51,12 @@
           type: 'bar',
           data: {
             labels: [
-              'Compartment 1',
-              'Compartment 2',
-              'Compartment 3',
-              'Compartment 4',
-              'Compartment 5',
-              'Compartment 6'
+              'Glass',
+              'Metal',
+              'Organic Waste',
+              'Paper',
+              'Plastic',
+              'Unclassified'
             ],
             datasets: [{
               label: 'Waste Level (%)',
