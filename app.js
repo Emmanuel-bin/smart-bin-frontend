@@ -48,7 +48,7 @@ function fetchBinsData() {
             title: `Bin ID: ${bin.binId}`,
             icon: {
               url: BIN_ICON_URL,
-              scaledSize: new google.maps.Size(40, 40) // adjust as needed
+              scaledSize: new google.maps.Size(70, 70) // adjust as needed
             }
           });
 
@@ -67,7 +67,7 @@ function fetchBinsData() {
           });
           markers[bin.binId].setIcon({
             url: BIN_ICON_URL,
-            scaledSize: new google.maps.Size(50, 50)
+            scaledSize: new google.maps.Size(70, 70)
           });
         }
       });
@@ -118,7 +118,7 @@ function startSSE() {
           title: `Bin ID: ${bin.binId}`,
           icon: {
             url: BIN_ICON_URL,
-            scaledSize: new google.maps.Size(40, 40)
+            scaledSize: new google.maps.Size(70, 70)
           }
         });
 
@@ -136,7 +136,7 @@ function startSSE() {
         });
         markers[bin.binId].setIcon({
           url: BIN_ICON_URL,
-          scaledSize: new google.maps.Size(40, 40)
+          scaledSize: new google.maps.Size(70, 70)
         });
       }
     });
