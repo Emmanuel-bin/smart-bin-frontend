@@ -3,6 +3,10 @@ const BASE_URL = 'https://smart-bin-backend-cusz.onrender.com';
 const API_URL = `${BASE_URL}/api/bins`;           // e.g. GET /api/bins
 const SSE_URL = `${BASE_URL}/api/bins/stream`;    // SSE endpoint for real-time updates
 
+// Reference a local bin.png stored in your frontend folder
+// e.g. place bin.png next to index.html, app.js, etc.
+const BIN_ICON_URL = './bin.png';
+
 // We'll keep references to the map and existing markers
 let map;
 let markers = {};  // e.g. { 'bin1': google.maps.Marker, 'bin2': ..., 'bin3': ... }
@@ -41,7 +45,11 @@ function fetchBinsData() {
               lng: bin.location.lng
             },
             map: map,
-            title: `Bin ID: ${bin.binId}`
+            title: `Bin ID: ${bin.binId}`,
+            icon: {
+              url: BIN_ICON_URL,
+              scaledSize: new google.maps.Size(40, 40) // adjust as needed
+            }
           });
 
           // Marker click -> open details page
@@ -52,10 +60,14 @@ function fetchBinsData() {
 
           markers[bin.binId] = marker;
         } else {
-          // If marker exists, just update position
+          // If marker exists, just update position and icon
           markers[bin.binId].setPosition({
             lat: bin.location.lat,
             lng: bin.location.lng
+          });
+          markers[bin.binId].setIcon({
+            url: BIN_ICON_URL,
+            scaledSize: new google.maps.Size(40, 40)
           });
         }
       });
@@ -86,7 +98,7 @@ function startSSE() {
     updatedBins.forEach(bin => {
       const hasHighLevel = bin.wasteLevel.some(level => level >= 95);
       if (hasHighLevel && !alertedBins[bin.binId]) {
-        showNotification(`⚠️ Warning: Bin ${bin.binId} has a compartment at 95% or above!`);
+        showNotification(`⚠️ Warning: Bin ${bin.binId} has a compartment nearly or completely full!`);
         alertedBins[bin.binId] = true; // Mark as alerted
       } else if (!hasHighLevel && alertedBins[bin.binId]) {
         // Reset alert status if waste level drops below threshold
@@ -103,7 +115,11 @@ function startSSE() {
             lng: bin.location.lng
           },
           map: map,
-          title: `Bin ID: ${bin.binId}`
+          title: `Bin ID: ${bin.binId}`,
+          icon: {
+            url: BIN_ICON_URL,
+            scaledSize: new google.maps.Size(40, 40)
+          }
         });
 
         marker.addListener('click', () => {
@@ -113,9 +129,14 @@ function startSSE() {
 
         markers[bin.binId] = marker;
       } else {
+        // Update position and icon
         markers[bin.binId].setPosition({
           lat: bin.location.lat,
           lng: bin.location.lng
+        });
+        markers[bin.binId].setIcon({
+          url: BIN_ICON_URL,
+          scaledSize: new google.maps.Size(40, 40)
         });
       }
     });
