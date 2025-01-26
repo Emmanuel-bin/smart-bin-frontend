@@ -67,7 +67,7 @@ function fetchBinsData() {
           });
           markers[bin.binId].setIcon({
             url: BIN_ICON_URL,
-            scaledSize: new google.maps.Size(40, 40)
+            scaledSize: new google.maps.Size(50, 50)
           });
         }
       });
