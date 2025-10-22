@@ -1,173 +1,83 @@
-// Replace with your Render backend URL
-const BASE_URL = 'https://smart-bin-backend-cusz.onrender.com';
-const API_URL = `${BASE_URL}/api/bins`;           // e.g. GET /api/bins
-const SSE_URL = `${BASE_URL}/api/bins/stream`;    // SSE endpoint for real-time updates
+// app.js — no breaking changes; works with new API shape
 
-// Reference a local bin.png stored in your frontend folder
-// e.g. place bin.png next to index.html, app.js, etc.
+const BASE_URL = 'https://smart-bin-backend-cusz.onrender.com';
+const API_URL = `${BASE_URL}/api/bins`;
+const SSE_URL = `${BASE_URL}/api/bins/stream`;
 const BIN_ICON_URL = './bin.png';
 
-// We'll keep references to the map and existing markers
 let map;
-let markers = {};  // e.g. { 'bin1': google.maps.Marker, 'bin2': ..., 'bin3': ... }
-
-// To track bins that have already triggered an alert
+let markers = {};
 let alertedBins = {};
 
-// Initialize the map
 function initMap() {
-  // Default center (somewhere in UK or near Nottingham)
   const defaultCenter = { lat: 53.0, lng: -1.2 };
-
-  map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 8,
-    center: defaultCenter,
-  });
-
-  // 1) Fetch initial bins data to place markers
+  map = new google.maps.Map(document.getElementById('map'), { zoom: 8, center: defaultCenter });
   fetchBinsData();
-
-  // 2) Start listening to SSE for real-time updates
   startSSE();
 }
 
-// Fetch initial bins data and place markers
 function fetchBinsData() {
   fetch(API_URL)
-    .then(response => response.json())
+    .then(r => r.json())
     .then(bins => {
-      bins.forEach(bin => {
-        // Create a marker for each bin if it doesn't exist
-        if (!markers[bin.binId]) {
-          const marker = new google.maps.Marker({
-            position: {
-              lat: bin.location.lat,
-              lng: bin.location.lng
-            },
-            map: map,
-            title: `Bin ID: ${bin.binId}`,
-            icon: {
-              url: BIN_ICON_URL,
-              scaledSize: new google.maps.Size(70, 70) // adjust as needed
-            }
-          });
-
-          // Marker click -> open details page
-          marker.addListener('click', () => {
-            const detailsUrl = `details.html?binId=${encodeURIComponent(bin.binId)}`;
-            window.open(detailsUrl, '_blank');
-          });
-
-          markers[bin.binId] = marker;
-        } else {
-          // If marker exists, just update position and icon
-          markers[bin.binId].setPosition({
-            lat: bin.location.lat,
-            lng: bin.location.lng
-          });
-          markers[bin.binId].setIcon({
-            url: BIN_ICON_URL,
-            scaledSize: new google.maps.Size(70, 70)
-          });
-        }
-      });
-
-      // Optionally fit map bounds to markers
+      bins.forEach(bin => upsertMarker(bin));
       const bounds = new google.maps.LatLngBounds();
-      Object.values(markers).forEach(marker => {
-        bounds.extend(marker.getPosition());
-      });
-      map.fitBounds(bounds);
+      Object.values(markers).forEach(m => bounds.extend(m.getPosition()));
+      if (!bounds.isEmpty()) map.fitBounds(bounds);
     })
-    .catch(err => {
-      console.error('Error fetching bins data:', err);
-    });
+    .catch(err => console.error('Error fetching bins:', err));
 }
 
-// Start Server-Sent Events connection
 function startSSE() {
-  // Connect to SSE endpoint
-  const eventSource = new EventSource(SSE_URL);
-
-  eventSource.onmessage = (evt) => {
-    // evt.data should be an array of bin objects
-    const updatedBins = JSON.parse(evt.data);
-    console.log("Received SSE update:", updatedBins);
-
-    // 1) Check for high waste levels and trigger notifications
-    updatedBins.forEach(bin => {
-      const hasHighLevel = bin.wasteLevel.some(level => level >= 95);
-      if (hasHighLevel && !alertedBins[bin.binId]) {
-        showNotification(`⚠️ Warning: Bin ${bin.binId} has a compartment nearly or completely full!`);
-        alertedBins[bin.binId] = true; // Mark as alerted
-      } else if (!hasHighLevel && alertedBins[bin.binId]) {
-        // Reset alert status if waste level drops below threshold
-        alertedBins[bin.binId] = false;
+  const es = new EventSource(SSE_URL);
+  es.onmessage = (evt) => {
+    const updates = JSON.parse(evt.data);
+    updates.forEach(bin => {
+      // alerts
+      const high = (bin.wasteLevel || []).some(v => v >= 95);
+      const id = String(bin.binId);
+      if (high && !alertedBins[id]) {
+        showNotification(`⚠️ Bin ${id} has a compartment at 95%+`);
+        alertedBins[id] = true;
+      } else if (!high && alertedBins[id]) {
+        alertedBins[id] = false;
       }
-    });
-
-    // 2) Update markers or create them if they don't exist
-    updatedBins.forEach(bin => {
-      if (!markers[bin.binId]) {
-        const marker = new google.maps.Marker({
-          position: {
-            lat: bin.location.lat,
-            lng: bin.location.lng
-          },
-          map: map,
-          title: `Bin ID: ${bin.binId}`,
-          icon: {
-            url: BIN_ICON_URL,
-            scaledSize: new google.maps.Size(70, 70)
-          }
-        });
-
-        marker.addListener('click', () => {
-          const detailsUrl = `details.html?binId=${encodeURIComponent(bin.binId)}`;
-          window.open(detailsUrl, '_blank');
-        });
-
-        markers[bin.binId] = marker;
-      } else {
-        // Update position and icon
-        markers[bin.binId].setPosition({
-          lat: bin.location.lat,
-          lng: bin.location.lng
-        });
-        markers[bin.binId].setIcon({
-          url: BIN_ICON_URL,
-          scaledSize: new google.maps.Size(70, 70)
-        });
-      }
+      upsertMarker(bin);
     });
   };
-
-  eventSource.onerror = (err) => {
-    console.error('SSE error:', err);
-  };
+  es.onerror = (e) => console.error('SSE error:', e);
 }
 
-// Function to display notifications
+function upsertMarker(bin) {
+  const id = String(bin.binId);
+  if (!markers[id]) {
+    const marker = new google.maps.Marker({
+      position: { lat: bin.location.lat, lng: bin.location.lng },
+      map,
+      title: `Bin ID: ${id}`,
+      icon: { url: BIN_ICON_URL, scaledSize: new google.maps.Size(70, 70) }
+    });
+    marker.addListener('click', () => {
+      const url = `details.html?binId=${encodeURIComponent(id)}`;
+      window.open(url, '_blank');
+    });
+    markers[id] = marker;
+  } else {
+    markers[id].setPosition({ lat: bin.location.lat, lng: bin.location.lng });
+    markers[id].setIcon({ url: BIN_ICON_URL, scaledSize: new google.maps.Size(70, 70) });
+  }
+}
+
 function showNotification(message) {
   const container = document.getElementById('notification-container');
-
-  // Create a new notification div
-  const notification = document.createElement('div');
-  notification.classList.add('notification');
-  notification.innerText = message;
-
-  // Append to the container
-  container.appendChild(notification);
-
-  // Automatically remove the notification after 5 seconds
+  const n = document.createElement('div');
+  n.classList.add('notification');
+  n.innerText = message;
+  container.appendChild(n);
   setTimeout(() => {
-    notification.classList.add('hide');
-    // Remove from DOM after transition
-    notification.addEventListener('transitionend', () => {
-      notification.remove();
-    });
+    n.classList.add('hide');
+    n.addEventListener('transitionend', () => n.remove());
   }, 5000);
 }
 
-// Initialize the map on window load
 window.onload = initMap;

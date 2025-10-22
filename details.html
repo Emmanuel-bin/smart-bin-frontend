@@ -2,9 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Bin Details (Bar Graph at 50%)</title>
+  <title>Bin Details</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- Chart.js for graphical display -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -15,52 +14,38 @@
     <p><strong>Humidity:</strong> <span id="bin-humidity"></span> %</p>
   </div>
 
-  <!-- Bar Chart Container at 50% width -->
   <div style="width: 50%; margin: 0 auto;">
     <canvas id="wasteChart"></canvas>
   </div>
 
   <script>
-    // We'll fetch data from the same /api/bins endpoint used by app.js
     const BASE_URL = 'https://smart-bin-backend-cusz.onrender.com';
-    const API_URL = `${BASE_URL}/api/bins`; 
+    const API_URL = `${BASE_URL}/api/bins`;
 
-    // 1) get binId from URL param
     const params = new URLSearchParams(window.location.search);
     const binId = params.get('binId');
 
-    // 2) fetch bin data from /api/bins, find the doc with this binId
     fetch(API_URL)
-      .then(res => res.json())
+      .then(r => r.json())
       .then(bins => {
-        const bin = bins.find(b => b.binId === binId);
+        const bin = bins.find(b => String(b.binId) === String(binId));
         if (!bin) {
           document.getElementById('bin-title').innerText = 'Bin Not Found';
           return;
         }
-
-        // 3) Update text for location, temp, humidity
         document.getElementById('bin-title').innerText = `Bin ID: ${bin.binId}`;
         document.getElementById('bin-location').innerText = `(${bin.location.lat}, ${bin.location.lng})`;
         document.getElementById('bin-temperature').innerText = bin.temperature ?? 'N/A';
         document.getElementById('bin-humidity').innerText = bin.humidity ?? 'N/A';
 
-        // 4) Render bar chart for wasteLevel
         const ctx = document.getElementById('wasteChart').getContext('2d');
         new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: [
-              'Glass',
-              'Metal',
-              'Organic Waste',
-              'Paper',
-              'Plastic',
-              'Unclassified'
-            ],
+            labels: ['Glass','Metal','Organic Waste','Paper','Plastic','Unclassified'],
             datasets: [{
               label: 'Waste Level (%)',
-              data: bin.wasteLevel ?? [0, 0, 0, 0, 0, 0],
+              data: bin.wasteLevel ?? [0,0,0,0,0,0],
               backgroundColor: [
                 'rgba(255, 99, 132, 0.6)',
                 'rgba(54, 162, 235, 0.6)',
@@ -74,24 +59,12 @@
             }]
           },
           options: {
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100
-              }
-            },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'bottom'
-              }
-            }
+            scales: { y: { beginAtZero: true, max: 100 } },
+            plugins: { legend: { display: true, position: 'bottom' } }
           }
         });
       })
-      .catch(err => {
-        console.error('Error fetching bin data:', err);
-      });
+      .catch(err => console.error('Error fetching bin data:', err));
   </script>
 </body>
 </html>
